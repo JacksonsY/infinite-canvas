@@ -5,6 +5,7 @@ import { Button, Input } from "antd";
 import { useCanvasStore, type CanvasProject } from "@/stores/canvas/use-canvas-store";
 import { useCanvasUiStore } from "@/stores/canvas/use-canvas-ui-store";
 import { exportCanvasProjects } from "@/lib/canvas/canvas-export";
+import { prefetchRoute } from "@/lib/route-prefetch";
 
 export function CanvasProjectCard({ project }: { project: CanvasProject }) {
     const navigate = useNavigate();
@@ -27,7 +28,7 @@ export function CanvasProjectCard({ project }: { project: CanvasProject }) {
     };
 
     return (
-        <article className="group flex min-h-44 cursor-pointer flex-col justify-between rounded-2xl bg-[#f1eee8] p-5 transition hover:bg-[#ebe6dc] dark:bg-white/5 dark:hover:bg-white/10" onClick={() => !editing && open()}>
+        <article className="group flex min-h-44 cursor-pointer flex-col justify-between rounded-2xl bg-[#f1eee8] p-5 transition hover:bg-[#ebe6dc] dark:bg-white/5 dark:hover:bg-white/10" onMouseEnter={() => prefetchRoute(`/canvas/${project.id}`)} onClick={() => !editing && open()}>
             <div className="flex items-start gap-3">
                 <input
                     type="checkbox"
