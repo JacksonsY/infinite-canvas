@@ -1,12 +1,9 @@
 name: Publish Canvas Agent
 
+# fork 保留上游已发布的 @basketikun/canvas-agent、不自行发布，故停用 push 自动发布
+# （fork 无权发到 basketikun 命名空间，自动触发只会失败）。仅留手动触发；若日后要自建
+# npm 包，请先改包名为自有命名空间并在仓库配置 NPM_TOKEN，再手动运行本工作流。
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "canvas-agent/**"
-      - ".github/workflows/publish-canvas-agent.yml"
   workflow_dispatch:
 
 permissions:
