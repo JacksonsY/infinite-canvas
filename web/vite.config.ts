@@ -22,4 +22,21 @@ export default defineConfig({
         __APP_VERSION__: JSON.stringify(localVersion),
         __APP_RELEASES__: JSON.stringify(parseChangelog(localChangelog)),
     },
+    build: {
+        // 分包：把大而稳定的第三方库拆成独立 chunk —— 跨部署长期缓存 + 并行下载，
+        // 业务代码变更不会让 antd/react 等重库的缓存失效。配合路由级懒加载，首屏更小。
+        chunkSizeWarningLimit: 1000,
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (!id.includes("node_modules")) return;
+                    // 只把最大的 antd 生态拆成独立块（它只被应用代码引用、不被其它第三方反向依赖，无环）；
+                    // react 与其余第三方统一进 vendor —— 避免 react-router 依赖链绕回 catch-all 形成循环块。
+                    if (id.includes("/antd/") || id.includes("/@ant-design/") || id.includes("/rc-") || id.includes("/@rc-component/")) return "antd-vendor";
+                    if (id.includes("/@codemirror/") || id.includes("/codemirror") || id.includes("/@uiw/")) return "codemirror-vendor";
+                    return "vendor";
+                },
+            },
+        },
+    },
 });
