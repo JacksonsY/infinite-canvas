@@ -28,7 +28,7 @@ export const videoSecondOptions = secondOptions.map((value) => String(value));
 
 type VideoSettingsPanelProps = {
     config: AiConfig;
-    onConfigChange: (key: "vquality" | "size" | "videoSeconds" | "videoGenerateAudio" | "videoWatermark", value: string) => void;
+    onConfigChange: (key: "vquality" | "size" | "videoSeconds" | "videoGenerateAudio" | "videoWatermark" | "videoRealPersonMode", value: string) => void;
     theme: CanvasTheme;
     showTitle?: boolean;
     className?: string;
@@ -111,6 +111,7 @@ function SeedanceVideoSettingsPanel({ config, onConfigChange, theme, showTitle, 
     const duration = normalizeSeedanceDuration(config.videoSeconds);
     const generateAudio = boolConfig(config.videoGenerateAudio, true);
     const watermark = boolConfig(config.videoWatermark, false);
+    const realPersonMode = boolConfig(config.videoRealPersonMode, false);
 
     return (
         <ImageSettingsTheme theme={theme}>
@@ -161,6 +162,7 @@ function SeedanceVideoSettingsPanel({ config, onConfigChange, theme, showTitle, 
                     <div className="grid gap-2 rounded-xl border p-2.5" style={{ borderColor: theme.node.stroke }}>
                         <SwitchRow label="生成声音" checked={generateAudio} theme={theme} onChange={(checked) => onConfigChange("videoGenerateAudio", String(checked))} />
                         <SwitchRow label="添加水印" checked={watermark} theme={theme} onChange={(checked) => onConfigChange("videoWatermark", String(checked))} />
+                        <SwitchRow label="真人模式" checked={realPersonMode} theme={theme} onChange={(checked) => onConfigChange("videoRealPersonMode", String(checked))} />
                     </div>
                 </SettingGroup>
             </div>

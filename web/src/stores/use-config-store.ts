@@ -33,6 +33,7 @@ export type AiConfig = {
     vquality: string;
     videoGenerateAudio: string;
     videoWatermark: string;
+    videoRealPersonMode: string;
     systemPrompt: string;
     models: string[];
     imageModels: string[];
@@ -57,7 +58,7 @@ export type ConfigTabKey = "channels" | "models" | "preferences" | "webdav" | "c
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 export type ModelCapability = "image" | "video" | "text" | "audio";
 const CHANNEL_MODEL_SEPARATOR = "::";
-const OPENAI_BASE_URL = "https://api.openai.com";
+const OPENAI_BASE_URL = "https://api.jzlh99.com";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
 
 export const defaultConfig: AiConfig = {
@@ -72,12 +73,12 @@ export const defaultConfig: AiConfig = {
             baseUrl: OPENAI_BASE_URL,
             apiKey: "",
             apiFormat: "openai",
-            models: ["gpt-image-2", "grok-imagine-video", "gpt-5.5", "gpt-4o-mini-tts"],
+            models: ["gpt-image-2", "A/doubao-seedance-2.0-mini", "gpt-5.5", "gpt-4o-mini-tts"],
         },
     ],
     model: "default::gpt-image-2",
     imageModel: "default::gpt-image-2",
-    videoModel: "default::grok-imagine-video",
+    videoModel: "default::A/doubao-seedance-2.0-mini",
     textModel: "default::gpt-5.5",
     audioModel: "default::gpt-4o-mini-tts",
     audioVoice: "alloy",
@@ -88,10 +89,11 @@ export const defaultConfig: AiConfig = {
     vquality: "720",
     videoGenerateAudio: "true",
     videoWatermark: "false",
+    videoRealPersonMode: "false",
     systemPrompt: "",
-    models: ["default::gpt-image-2", "default::grok-imagine-video", "default::gpt-5.5", "default::gpt-4o-mini-tts"],
+    models: ["default::gpt-image-2", "default::A/doubao-seedance-2.0-mini", "default::gpt-5.5", "default::gpt-4o-mini-tts"],
     imageModels: ["default::gpt-image-2"],
-    videoModels: ["default::grok-imagine-video"],
+    videoModels: ["default::A/doubao-seedance-2.0-mini"],
     textModels: ["default::gpt-5.5"],
     audioModels: ["default::gpt-4o-mini-tts"],
     quality: "auto",
@@ -215,7 +217,7 @@ export const useConfigStore = create<ConfigStore>()(
                         channels,
                         models,
                         imageModel: normalizeModelOptionValue(config.imageModel || config.model, channels),
-                        videoModel: normalizeModelOptionValue(config.videoModel || "grok-imagine-video", channels),
+                        videoModel: normalizeModelOptionValue(config.videoModel || "A/doubao-seedance-2.0-mini", channels),
                         textModel: normalizeModelOptionValue(config.textModel || config.model, channels),
                         audioModel: normalizeModelOptionValue(config.audioModel || defaultConfig.audioModel, channels),
                         audioVoice: config.audioVoice || defaultConfig.audioVoice,
@@ -226,6 +228,7 @@ export const useConfigStore = create<ConfigStore>()(
                         vquality: config.vquality || "720",
                         videoGenerateAudio: config.videoGenerateAudio || "true",
                         videoWatermark: config.videoWatermark || "false",
+                        videoRealPersonMode: config.videoRealPersonMode || "false",
                         canvasImageCount: config.canvasImageCount || "3",
                         imageModels: Array.isArray(persistedConfig.imageModels) ? normalizeModelList(config.imageModels, channels) : filterModelsByCapability(models, "image"),
                         videoModels: Array.isArray(persistedConfig.videoModels) ? normalizeModelList(config.videoModels, channels) : filterModelsByCapability(models, "video"),
@@ -370,27 +373,8 @@ function uniqueModelOptions(models: string[]) {
 }
 
 export function buildApiUrl(baseUrl: string, path: string) {
-    let normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, "");
-    normalizedBaseUrl = normalizeArkPlanBaseUrl(normalizedBaseUrl);
+    const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, "");
     const lowerBaseUrl = normalizedBaseUrl.toLowerCase();
-    const apiBaseUrl = lowerBaseUrl.endsWith("/v1") || lowerBaseUrl.endsWith("/api/v3") || lowerBaseUrl.endsWith("/api/plan/v3") ? normalizedBaseUrl : `${normalizedBaseUrl}/v1`;
+    const apiBaseUrl = lowerBaseUrl.endsWith("/v1") || lowerBaseUrl.endsWith("/api/v3") ? normalizedBaseUrl : `${normalizedBaseUrl}/v1`;
     return `${apiBaseUrl}${path}`;
-}
-
-function normalizeArkPlanBaseUrl(baseUrl: string) {
-    try {
-        const url = new URL(baseUrl);
-        const path = url.pathname.replace(/\/+$/, "");
-        const lowerPath = path.toLowerCase();
-        const arkPlanIndex = lowerPath.indexOf("/api/plan/v3");
-        if (arkPlanIndex < 0) return baseUrl;
-        const end = arkPlanIndex + "/api/plan/v3".length;
-        if (lowerPath.length !== end && lowerPath[end] !== "/") return baseUrl;
-        url.pathname = path.slice(0, end);
-        url.search = "";
-        url.hash = "";
-        return url.toString().replace(/\/+$/, "");
-    } catch {
-        return baseUrl;
-    }
 }

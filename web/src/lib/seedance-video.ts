@@ -58,7 +58,7 @@ const seedancePixels = {
 
 export function isSeedanceVideoConfig(config: AiConfig | Pick<AiConfig, "model" | "videoModel" | "baseUrl">) {
     const requestConfig = "channels" in config ? resolveModelRequestConfig(config, config.model || config.videoModel) : config;
-    return isSeedanceVideoModel(modelOptionName(requestConfig.model || requestConfig.videoModel)) || isArkPlanBaseUrl(requestConfig.baseUrl);
+    return isSeedanceVideoModel(modelOptionName(requestConfig.model || requestConfig.videoModel));
 }
 
 export function isSeedanceVideoModel(model: string) {
@@ -71,8 +71,35 @@ export function isSeedanceFastModel(model: string) {
     return isSeedanceVideoModel(value) && value.includes("fast");
 }
 
-export function isArkPlanBaseUrl(baseUrl: string) {
-    return baseUrl.toLowerCase().includes("ark.cn-beijing.volces.com/api/plan/v3") || baseUrl.toLowerCase().includes("/api/plan/v3");
+export type VideoModelFamily = "seedance" | "kling" | "happyhorse" | "generic";
+
+// videoModelFamily 按模型名判定参数族——各家收的字段差异很大（见 https://aiai.ac/docs）：
+// seedance 用 resolution+aspect_ratio+extra_body；kling 用 quality 且拒收 resolution/size/fps。
+export function videoModelFamily(model: string): VideoModelFamily {
+    const value = model.toLowerCase();
+    if (value.includes("seedance") || value.includes("doubao-seedance")) return "seedance";
+    if (value.includes("kling")) return "kling";
+    if (value.includes("happyhorse")) return "happyhorse";
+    return "generic";
+}
+
+export function isKlingVideoModel(model: string) {
+    return videoModelFamily(model) === "kling";
+}
+
+export function isHappyhorseVideoModel(model: string) {
+    return videoModelFamily(model) === "happyhorse";
+}
+
+// klingQualityFromResolution：kling 不收 resolution，用 quality 控分辨率（std=720p / pro=1080p）。
+export function klingQualityFromResolution(vquality: string): "std" | "pro" {
+    return normalizeResolutionToken(vquality) === "1080p" ? "pro" : "std";
+}
+
+// klingRatio：kling 仅支持 1:1 / 16:9 / 9:16，其余画幅归一化到默认 16:9。
+export function klingRatio(size: string): "1:1" | "16:9" | "9:16" {
+    const ratio = normalizeSeedanceRatio(size);
+    return ratio === "1:1" || ratio === "9:16" ? ratio : "16:9";
 }
 
 export function normalizeSeedanceResolution(value: string, model = "") {

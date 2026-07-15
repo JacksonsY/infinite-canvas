@@ -148,6 +148,7 @@ function buildNodeConfig(globalConfig: AiConfig, node: CanvasNodeData, mode: Can
         vquality: node.metadata?.vquality || globalConfig.vquality || defaultConfig.vquality,
         videoGenerateAudio: node.metadata?.generateAudio || globalConfig.videoGenerateAudio || defaultConfig.videoGenerateAudio,
         videoWatermark: node.metadata?.watermark || globalConfig.videoWatermark || defaultConfig.videoWatermark,
+        videoRealPersonMode: node.metadata?.realPersonMode || globalConfig.videoRealPersonMode || defaultConfig.videoRealPersonMode,
         audioVoice: node.metadata?.audioVoice || globalConfig.audioVoice || defaultConfig.audioVoice,
         audioFormat: node.metadata?.audioFormat || globalConfig.audioFormat || defaultConfig.audioFormat,
         audioSpeed: node.metadata?.audioSpeed || globalConfig.audioSpeed || defaultConfig.audioSpeed,
@@ -167,6 +168,7 @@ function videoConfigPatch(key: keyof AiConfig, value: string) {
     if (key === "videoSeconds") return { seconds: value };
     if (key === "videoGenerateAudio") return { generateAudio: value };
     if (key === "videoWatermark") return { watermark: value };
+    if (key === "videoRealPersonMode") return { realPersonMode: value };
     return { [key]: value };
 }
 
