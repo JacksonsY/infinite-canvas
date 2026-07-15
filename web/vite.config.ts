@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
@@ -38,9 +38,22 @@ function localPluginsManifest(): Plugin {
     };
 }
 
+// 生成 404.html（内容 = index.html）：静态托管（EdgeOne / GitHub Pages 等）在找不到路由对应文件时
+// 回退到 404.html，从而无需贪吃的 /* rewrite —— 那会把 /assets/*.js 也重写成 HTML、导致模块加载 MIME 报错。
+// 真实静态资源仍按文件正常返回，只有未命中的前端路由才落到 404.html（= index.html），交给 React Router。
+function spa404Fallback(): Plugin {
+    return {
+        name: "spa-404-fallback",
+        closeBundle() {
+            const index = resolve(webDir, "dist/index.html");
+            if (existsSync(index)) copyFileSync(index, resolve(webDir, "dist/404.html"));
+        },
+    };
+}
+
 export default defineConfig({
     base: process.env.VITE_BASE || "/",
-    plugins: [react(), localPluginsManifest()],
+    plugins: [react(), localPluginsManifest(), spa404Fallback()],
     resolve: {
         alias: {
             "@": resolve(webDir, "src"),
