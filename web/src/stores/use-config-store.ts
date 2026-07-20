@@ -45,6 +45,7 @@ export type AiConfig = {
     models: string[];
     quality: string;
     size: string;
+    background: string;
     count: string;
     canvasImageCount: string;
 };
@@ -56,7 +57,7 @@ export type WebdavSyncConfig = {
     directory: string;
     lastSyncedAt: string;
 };
-export type ConfigTabKey = "channels" | "preferences" | "webdav";
+export type ConfigTabKey = "channels" | "preferences" | "prompt-sources" | "webdav";
 
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 const CHANNEL_MODEL_SEPARATOR = "::";
@@ -101,6 +102,7 @@ export const defaultConfig: AiConfig = {
     models: ["default::gpt-image-2", "default::doubao-seedance-2.0-mini", "default::gpt-5.5", "default::gpt-4o-mini-tts"],
     quality: "auto",
     size: "1:1",
+    background: "",
     count: "1",
     canvasImageCount: "3",
 };

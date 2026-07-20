@@ -55,9 +55,11 @@ function withCacheBust(url: string) {
     return `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
 }
 
-// 从 URL 安装(或覆盖更新)一个插件,成功后立即启用
-export async function installPluginFromUrl(url: string, opts?: { official?: boolean }) {
-    const source = await fetchPluginSource(url);
+// 从 URL 安装(或覆盖更新)一个插件,成功后立即启用。
+// bustCache=true 时下载绕过 HTTP/CDN 缓存(升级场景必需,避免拿到旧产物),
+// 但落库的 url 始终保持干净(不带 ?t=),便于后续再次更新。
+export async function installPluginFromUrl(url: string, opts?: { official?: boolean; bustCache?: boolean }) {
+    const source = await fetchPluginSource(opts?.bustCache ? withCacheBust(url) : url);
     const plugin = await evaluatePluginSource(source);
     deactivatePlugin(plugin.id); // 覆盖旧版本
     usePluginStore.getState().upsert({ id: plugin.id, name: plugin.name || plugin.id, version: plugin.version || "0.0.0", description: plugin.description, url, source, enabled: true, official: opts?.official });
@@ -66,7 +68,8 @@ export async function installPluginFromUrl(url: string, opts?: { official?: bool
 }
 
 export async function updatePlugin(record: InstalledPlugin) {
-    return installPluginFromUrl(record.url, { official: record.official });
+    // 升级必须拿到最新产物,强制绕过缓存
+    return installPluginFromUrl(record.url, { official: record.official, bustCache: true });
 }
 
 export async function setPluginEnabled(record: InstalledPlugin, enabled: boolean) {
@@ -111,7 +114,8 @@ export async function ensurePluginsLoaded() {
 
 // 自动发现 web/public/plugins 下的本地插件:加入列表但默认关闭,
 // 本地开发放好插件文件即可在管理器里看到并一键启用,无需手动填 URL。
-// 已在列表中的(用户装过/发现过)不覆盖,尊重其现有开关。
+// 已在列表中的:刷新元数据(version/name/description/source)到最新产物,
+// 但保留用户的 enabled 开关 —— 否则改了插件版本后,持久化 store 里的旧 version 永不更新。
 async function loadLocalPlugins() {
     let urls: unknown;
     try {
@@ -128,8 +132,17 @@ async function loadLocalPlugins() {
             try {
                 const source = await fetchPluginSource(withCacheBust(url));
                 const plugin = await evaluatePluginSource(source);
-                if (store.plugins.some((item) => item.id === plugin.id)) return;
-                store.upsert({ id: plugin.id, name: plugin.name || plugin.id, version: plugin.version || "0.0.0", description: plugin.description, url, source, enabled: false, local: true });
+                const existing = store.plugins.find((item) => item.id === plugin.id);
+                store.upsert({
+                    id: plugin.id,
+                    name: plugin.name || plugin.id,
+                    version: plugin.version || "0.0.0",
+                    description: plugin.description,
+                    url,
+                    source,
+                    enabled: existing?.enabled ?? false, // 保留用户开关,新发现默认关闭
+                    local: true,
+                });
             } catch (error) {
                 console.error(`[plugin] 本地插件发现失败: ${url}`, error);
             }

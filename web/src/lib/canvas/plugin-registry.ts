@@ -30,3 +30,20 @@ export async function fetchOfficialPlugins(registryUrl: string = PLUGIN_REGISTRY
             url: item.url ? item.url : new URL(item.entry as string, registryUrl).toString(),
         }));
 }
+
+// 语义化版本比较:返回 >0 表示 a 更高,<0 表示 b 更高,0 表示相等。
+// 只按 major.minor.patch 数值比较,忽略非数字段(预发布标签等)。
+function compareSemver(a: string, b: string): number {
+    const parse = (v: string) => v.split(".").map((part) => parseInt(part, 10) || 0);
+    const [pa, pb] = [parse(a), parse(b)];
+    for (let i = 0; i < 3; i++) {
+        const diff = (pa[i] || 0) - (pb[i] || 0);
+        if (diff !== 0) return diff;
+    }
+    return 0;
+}
+
+// 远程版本是否比本地已安装版本更高(即有可升级的更新)
+export function hasUpgrade(installedVersion: string, remoteVersion: string): boolean {
+    return compareSemver(remoteVersion, installedVersion) > 0;
+}

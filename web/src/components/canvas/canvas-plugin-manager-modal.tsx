@@ -4,7 +4,7 @@ import { AlertTriangle, Download, Puzzle, RefreshCw, Trash2 } from "lucide-react
 
 import { canvasThemes } from "@/lib/canvas-theme";
 import { installPluginFromUrl, setPluginEnabled, uninstallPlugin, updatePlugin } from "@/lib/canvas/plugin-loader";
-import { fetchOfficialPlugins, type OfficialPluginEntry } from "@/lib/canvas/plugin-registry";
+import { fetchOfficialPlugins, hasUpgrade, type OfficialPluginEntry } from "@/lib/canvas/plugin-registry";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { usePluginStore, type InstalledPlugin } from "@/stores/canvas/use-plugin-store";
 
@@ -81,18 +81,35 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
     };
 
     // 已安装插件的操作区:启用开关 +(非本地)更新/卸载
-    const installedControls = (record: InstalledPlugin) => (
+    // upgradable=true 时(远程有更高版本),更新按钮高亮为主色以提示升级
+    const installedControls = (record: InstalledPlugin, upgradable = false) => (
         <>
             <Switch size="small" checked={record.enabled} loading={busyId === record.id} onChange={(checked) => runOnPlugin(record, () => setPluginEnabled(record, checked), checked ? "已启用" : "已禁用")} />
             {!record.local && (
                 <>
-                    <Button type="text" size="small" icon={<RefreshCw className="size-4" />} loading={busyId === record.id} title="从来源更新" onClick={() => runOnPlugin(record, async () => void (await updatePlugin(record)), "已更新")} />
+                    <Button
+                        type={upgradable ? "primary" : "text"}
+                        size="small"
+                        icon={<RefreshCw className="size-4" />}
+                        loading={busyId === record.id}
+                        title={upgradable ? "有新版本，点击升级" : "从来源更新"}
+                        onClick={() => runOnPlugin(record, async () => void (await updatePlugin(record)), "已更新")}
+                    />
                     <Popconfirm title="卸载该插件？" okText="卸载" cancelText="取消" onConfirm={() => uninstallPlugin(record.id)}>
                         <Button type="text" size="small" danger icon={<Trash2 className="size-4" />} title="卸载" />
                     </Popconfirm>
                 </>
             )}
         </>
+    );
+
+    // 图标外挂一个绿点(右上角),用于「有可升级版本」的提示。
+    // boxShadow 画一圈与卡片同色的描边环,让绿点从图标上「浮起」。
+    const withUpgradeDot = (icon: ReactNode) => (
+        <span className="relative inline-flex">
+            {icon}
+            <span className="absolute -right-1 -top-1 size-2 rounded-full" style={{ background: "#22c55e", boxShadow: `0 0 0 2px ${theme.node.fill}` }} title="有新版本可升级" />
+        </span>
     );
 
     const versionTag = (version: string) => (
@@ -150,14 +167,18 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
                 <div className="thin-scrollbar max-h-[46vh] space-y-2 overflow-auto">
                     {official.map((entry) => {
                         const record = recordById.get(entry.id);
+                        // 已安装且远程版本更高 → 显示绿点并高亮升级按钮
+                        const upgradable = Boolean(record && hasUpgrade(record.version, entry.version));
+                        const icon = entry.icon || <Puzzle className="size-4" />;
                         return row(
                             entry.id,
-                            entry.icon || <Puzzle className="size-4" />,
+                            upgradable ? withUpgradeDot(icon) : icon,
                             entry.name,
-                            entry.version,
+                            // 有升级时标题版本展示为「本地 → 远程」,让用户看清升级到哪个版本
+                            upgradable && record ? `${record.version} → ${entry.version}` : entry.version,
                             entry.description,
                             record ? (
-                                installedControls(record)
+                                installedControls(record, upgradable)
                             ) : (
                                 <Button type="primary" size="small" icon={<Download className="size-4" />} loading={busyId === entry.id} onClick={() => handleInstallOfficial(entry)}>
                                     安装
