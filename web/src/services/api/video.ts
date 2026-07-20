@@ -65,7 +65,7 @@ export async function createVideoGenerationTask(config: AiConfig, prompt: string
     const modelName = modelOptionName(selectedModel);
     const family = videoModelFamily(modelName);
     if (family !== "seedance" && (videoReferences.length || audioReferences.length)) {
-        throw new Error("当前视频模型不支持参考视频或参考音频，请改用 Seedance 2.0（A/doubao-seedance-*），或移除参考素材");
+        throw new Error("当前视频模型不支持参考视频或参考音频，请改用 Seedance 2.0（doubao-seedance-*），或移除参考素材");
     }
 
     const body = await buildVideoRequestBody(requestConfig, modelName, family, prompt, references, videoReferences, audioReferences);
